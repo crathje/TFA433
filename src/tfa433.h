@@ -1,61 +1,75 @@
 /*
-433 MHz wether station receiver library for so called TFA
+433 MHz weather station receiver library for so called TFA 30.3212.02 (for the "Joker" base station)
 
-Pulse should look like this:
-     __   0   __     1     __    START/STOP    __
-   _|  |_____|  |_________|  |________________|  |_
 
-Based on my measurement pulse lengths are the following:
-0: 1500 - 2500 us
-1: 3500 - 4500 us
-S: 7500 - 9000 us
-
-Pulses shorter than 1500 and longer than 9000 are skipped.
-Before the first data bit arrived usually 8-16 "S" pulsey are coming.
-Senders are usually repeats the message 3-6 times. Between repeats there are 2 "S" pulses.
+30.3212.02 temperature only https://www.tfa-dostmann.de/produkt/temperatursender-30-3212/
+compatible base station 30.3055.01 https://www.tfa-dostmann.de/produkt/funk-thermometer-joker-30-3055/
 
 */
 #ifndef tfa433_h
 #define tfa433_h
 
 #if ARDUINO >= 100
- #include "Arduino.h"
+#include "Arduino.h"
 #else
- #include "WProgram.h"
+#include "WProgram.h"
 #endif
 
-typedef struct{
+// we do not like static interrupt handlers, ESP32 allows us to use function interrupts
+#include <FunctionalInterrupt.h>
+
+// #define __TFA_ENABLE_DRY_TEST 1
+
+// actual ~515
+#define SYNCPULSELENMIN 400
+// actual ~515
+#define SYNCPULSELENMAX 600
+#define MAXPULSELEN 3000
+#define _PAK_SIZE 135
+#define _BUFF_SIZE _PAK_SIZE + 5
+
+// #define dbg(s) Serial.println(s)
+#define dbg(s)
+
+typedef struct tfaResult
+{
 	byte id;
 	byte channel;
-	byte humidity;
-	int temperature;
-	bool battery;
+	int16_t temperature;
 } tfaResult;
 
-class TFA433{
-	public:
-		TFA433();
-		void start(int pin);
-		void stop();
-		bool isDataAvailable();
-		void getData(byte &id, byte &channel, byte &humidity, int &temperature, bool &battery);
-		tfaResult getData();
-		
-	private:
-		const static int _BUFF_SIZE;
+class TFA433
+{
+public:
+	TFA433();
+	void start(int pin);
+	void stop();
+	bool isDataAvailable();
+	void getData(byte &id, byte &channel, int16_t &temperature);
+	tfaResult getData();
+#ifdef __TFA_ENABLE_DRY_TEST
+	void _play_dry();
+#endif
 
-		volatile static bool _avail;
-		volatile static byte _buff[];
-		volatile static byte _buffEnd;
+private:
+	volatile bool _avail, _inSync, _inPacket;
+	byte _buff[_BUFF_SIZE];
+	volatile byte _buffEnd;
 
-		static unsigned long _lastPackageArrived;
-		static byte _lastBuff[];
-		static byte _pin;
+	uint8_t _lastPinValue;
+	unsigned long _lastPulseLen, _lastHighUsec, _lastUsec;
 
-		static void _handler();
-		static bool _isRepeat();
-		int _binToDecRev(volatile byte *binary, int s, int e);
-		int _binToDec(volatile byte *binary, int s, int e);
+	unsigned long _lastPackageArrived;
+	byte _lastBuff[_BUFF_SIZE];
+	byte _pin;
+
+	void _init();
+	void ARDUINO_ISR_ATTR _handler();
+	bool ARDUINO_ISR_ATTR _handler_internal(unsigned long uSec, uint8_t pinValue);
+	int _binToDecRev(byte *binary, int s, int e);
+	int _binToDec(byte *binary, int s, int e);
+
+	tfaResult _values;
 };
 
 #endif

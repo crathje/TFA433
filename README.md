@@ -1,17 +1,21 @@
+[![Actions Status](https://github.com/crathje/TFA433/workflows/PlatformIO%20CI/badge.svg)](https://github.com/crathje/TFA433/actions)
+
 # TFA 433
 
-Use your Arduino to receive temperature and humidity data from TFA remote sensor.
+Use your Arduino to receive temperature and humidity data from TFA remote temperatur sensor.
+
+This is a fork of https://github.com/denxhun/TFA433 - credits to denxhun.
+
+Adapted to work with the TFA 30.3212.02 temperature only sensors ( https://www.tfa-dostmann.de/produkt/temperatursender-30-3212/ ) that come along with the compatible base station 30.3055.01 ( https://www.tfa-dostmann.de/produkt/funk-thermometer-joker-30-3055/ ).
 
 ## Download
-https://github.com/denxhun/TFA433
-
-## Wiki
-https://github.com/denxhun/TFA433/wiki
+https://github.com/crathje/TFA433
 
 ## Info
 ### Hardware
 
-There are several 433 MHz receiver available in many places. I used a cheap type and it works perfectly. You should use Arduino's interrupt enabled digital input pins (on Uno/Nano: D2 or D3) since this library built on top of that feature.
+There are several 433 MHz receiver available in many places. I used a cheap YX-MK-5V and it works perfectly. 
+A level shifter to 3.3V for ESP32 is recommended - a voltage divider will most likely also work. 
 
 ### Usage
 
@@ -21,8 +25,12 @@ In the examples directory you can find a simple way of usage.
 
 ## Protocol
 
-You can find a detailed description of the protocol here: https://manual.pilight.org/protocols/433.92/weather/tfa.html
+The protocol of the TFA 30.3212.02 differs from the original one used in this fork's source. Like there is no humidity available and the temperature is provided as binary encoded degrees celcius. 
+
+See this capture while transmitting 27.2°C as reference:
+![LA Captured TFA 30.3212.02 transmitting 27.2°C](raw-data/TFA-30.3212.02-sample-data-captured-27.2-degree-celcius.png?raw=true)
+
 
 ### Inspiration
 
-Thanks for the reverse engineering the sensor's messages to pilight's dev team. The processing code is built on top of their excellent source - tailored for my special needs and limited environment.
+Thanks to https://github.com/denxhun/TFA433 for the basics.
