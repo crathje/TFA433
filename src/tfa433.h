@@ -36,6 +36,7 @@ typedef struct tfaResult
 	byte id;
 	byte channel;
 	int16_t temperature;
+	unsigned long packageMS;
 } tfaResult;
 
 class TFA433
@@ -45,7 +46,7 @@ public:
 	void start(int pin);
 	void stop();
 	bool isDataAvailable();
-	void getData(byte &id, byte &channel, int16_t &temperature);
+	void getData(byte &id, byte &channel, int16_t &temperature, unsigned long &packageMS);
 	tfaResult getData();
 #ifdef __TFA_ENABLE_DRY_TEST
 	void _play_dry();
@@ -59,7 +60,6 @@ private:
 	uint8_t _lastPinValue;
 	unsigned long _lastPulseLen, _lastHighUsec, _lastUsec;
 
-	unsigned long _lastPackageArrived;
 	byte _lastBuff[_BUFF_SIZE];
 	byte _pin;
 

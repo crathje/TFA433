@@ -4,13 +4,12 @@ volatile bool _avail = false;
 volatile byte _buff[_BUFF_SIZE];
 volatile byte _buffEnd = 0;
 
-unsigned long _lastPackageArrived;
 byte _pin = 0;
 
 TFA433::TFA433()
 {
 	_lastPinValue = 0xFF;
-	_lastPackageArrived = 0;
+	_values.packageMS = 0;
 }
 
 void TFA433::start(int pin)
@@ -169,6 +168,7 @@ inline bool TFA433::_handler_internal(unsigned long uSec, uint8_t pinValue)
 
 		int16_t sign = _binToDecRev(_buff, 12, 12) ? -1 : 1;
 		this->_values.temperature = sign * _binToDecRev(_buff, 13, 23);
+		this->_values.packageMS = millis();
 		_avail = true;
 
 #ifdef __TFA_ENABLE_DRY_TEST
@@ -186,9 +186,10 @@ inline bool TFA433::_handler_internal(unsigned long uSec, uint8_t pinValue)
 	return false;
 }
 
-void TFA433::getData(byte &id, byte &channel, int16_t &temperature)
+void TFA433::getData(byte &id, byte &channel, int16_t &temperature, unsigned long &packageMS)
 {
 	temperature = this->_values.temperature;
+	packageMS = this->_values.packageMS;
 
 	// id = _binToDecRev(_buff, 2, 9);
 	// channel = _binToDecRev(_buff, 12, 13) + 1;
@@ -207,7 +208,7 @@ void TFA433::getData(byte &id, byte &channel, int16_t &temperature)
 tfaResult TFA433::getData()
 {
 	tfaResult result;
-	getData(result.id, result.channel, result.temperature);
+	getData(result.id, result.channel, result.temperature, result.packageMS);
 	return result;
 }
 
