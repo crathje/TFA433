@@ -107,74 +107,49 @@ inline bool TFA433::_handler_internal(unsigned long uSec, uint8_t pinValue)
 		_inPacket = false;
 		_buffEnd = 0;
 
-		// int crc = 0;
-		// for (int i = 0; i < 34; i++)
-		// {
-		// 	if (_buff[i] != (crc & 1))
-		// 	{
-		// 		crc = (crc >> 1) ^ 12;
-		// 	}
-		// 	else
-		// 	{
-		// 		crc = (crc >> 1);
-		// 	}
-		// }
-		// crc ^= _binToDec(_buff, 34, 37);
-		// if (crc != _binToDec(_buff, 38, 41))
-		// {
-		// 	dbg("CRC error!");
-		// 	_buffEnd = 0;
-		// 	_avail = false;
-		// 	return;
-		// }
-		// dbg("CRC OK.");
+		// try to match a checksum withing the three occurances every 6 bytes
+		for (int i = 0; i < 3; i++)
+		{
+			int checksumFromMessage = _binToDec(_buff, i * 6 * 8 + 34, 37);
+			int cchecksumComputed = _checksum(_buff, i * 6 * 8);
+#ifdef __TFA_ENABLE_DRY_TEST
+			Serial.printf("_handler_internal: checksums for repeat: %d -->  %02x vs %02x --> %d\r\n", i, checksumFromMessage, cchecksumComputed, checksumFromMessage == cchecksumComputed ? 1 : 0);
+#endif
+			if (checksumFromMessage == cchecksumComputed)
+			{
+				this->_values.channel = _binToDecRev(_buff, i * 6 * 8 + 2, i * 6 * 8 + 3) + 1;
+				this->_values.id = _binToDecRev(_buff, i * 6 * 8 + 4, i * 6 * 8 + 11);
+				int16_t sign = _binToDecRev(_buff, i * 6 * 8 + 12, i * 6 * 8 + 12) ? -1 : 1;
+				this->_values.temperature = sign * _binToDecRev(_buff, i * 6 * 8 + 13, i * 6 * 8 + 23);
+				_avail = true;
 
 #ifdef __TFA_ENABLE_DRY_TEST
-		int crc = 0;
-		for (int i = 0; i < 34; i++)
-		{
-			if (_buff[i] != (crc & 1))
-			{
-				crc = (crc >> 1) ^ 12;
-			}
-			else
-			{
-				crc = (crc >> 1);
-			}
-		}
-		crc ^= _binToDec(_buff, 34, 37);
-		int readCRC = _binToDec(_buff, 38, 41);
-		if (crc != readCRC)
-		{
-			Serial.printf("CRC ERROR %d vs %d.\r\n", crc, readCRC);
-		}
-		else
-		{
-
-			Serial.printf("CRC OK.\r\n");
-		}
+				Serial.printf("_handler_internal: received data %d\r\n", this->_values.temperature);
 #endif
-
-		// since the CRC did not work out, we just compare the received messages
-		for (int i = 1; i < 40; i++)
-		{
-			if ((_buff[i] != _buff[i + 48]) || (_buff[i] != _buff[i + 48 + 48]))
-			{
-#ifdef __TFA_ENABLE_DRY_TEST
-				Serial.printf("_handler_internal: data packets did not match\r\n", uSec);
-#endif
-				return false;
+				return true;
 			}
 		}
 
-		int16_t sign = _binToDecRev(_buff, 12, 12) ? -1 : 1;
-		this->_values.temperature = sign * _binToDecRev(_buff, 13, 23);
-		_avail = true;
+		// 		// since the CRC did not work out, we just compare the received messages
+		// 		for (int i = 1; i < 40; i++)
+		// 		{
+		// 			if ((_buff[i] != _buff[i + 48]) || (_buff[i] != _buff[i + 48 + 48]))
+		// 			{
+		// #ifdef __TFA_ENABLE_DRY_TEST
+		// 				Serial.printf("_handler_internal: data packets did not match\r\n", uSec);
+		// #endif
+		// 				return false;
+		// 			}
+		// 		}
 
-#ifdef __TFA_ENABLE_DRY_TEST
-		Serial.printf("_handler_internal: received data %d\r\n", this->_values.temperature);
-#endif
-		return true;
+		// 		int16_t sign = _binToDecRev(_buff, 12, 12) ? -1 : 1;
+		// 		this->_values.temperature = sign * _binToDecRev(_buff, 13, 23);
+		// 		_avail = true;
+
+		// #ifdef __TFA_ENABLE_DRY_TEST
+		// 		Serial.printf("_handler_internal: received data %d\r\n", this->_values.temperature);
+		// #endif
+		// 		return true;
 	}
 	if (_buffEnd >= _PAK_SIZE)
 	{
@@ -229,6 +204,30 @@ int TFA433::_binToDec(byte *binary, int s, int e)
 		if (binary[s++] != 0)
 			result |= mask;
 	return result;
+}
+
+/*
+	Based on crc8 from https://github.com/lucsmall/BetterWH2/blob/master/BetterWH2.ino#L276
+	Adapted to the bitasbyte thinking
+*/
+uint8_t TFA433::_checksum(byte *binary, int offset)
+{
+	uint8_t crc = 0;
+
+	for (uint8_t ci = 0; ci < 4; ci++)
+	{
+		byte inbyte = _binToDecRev(_buff, offset + ci * 8, offset + ci * 8 + 7);
+		for (uint8_t i = 8; i; i--)
+		{
+			uint8_t mix = (crc ^ inbyte) & 0x80; // changed from & 0x01
+			crc <<= 1;							 // changed from right shift
+			if (mix)
+				crc ^= 0x31; // changed from 0x8C;
+			inbyte <<= 1;	 // changed from right shift
+		}
+	}
+
+	return crc & 0xFE;
 }
 
 #ifdef __TFA_ENABLE_DRY_TEST

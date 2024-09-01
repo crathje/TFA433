@@ -68,7 +68,7 @@ private:
 	bool ARDUINO_ISR_ATTR _handler_internal(unsigned long uSec, uint8_t pinValue);
 	int _binToDecRev(byte *binary, int s, int e);
 	int _binToDec(byte *binary, int s, int e);
-
+	uint8_t _checksum(byte *binary, int offset);
 	tfaResult _values;
 };
 
