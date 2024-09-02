@@ -110,12 +110,14 @@ inline bool TFA433::_handler_internal(unsigned long uSec, uint8_t pinValue)
 		// try to match a checksum withing the three occurances every 6 bytes
 		for (int i = 0; i < 3; i++)
 		{
-			int checksumFromMessage = _binToDec(_buff, i * 6 * 8 + 34, 37);
-			int cchecksumComputed = _checksum(_buff, i * 6 * 8);
+			int checksumIndex = i * 6 * 8 + 32;
+			int checksumFromMessage = _binToDecRev(_buff, checksumIndex, checksumIndex + 7);
+			int checksumComputed = _checksum(_buff, i * 6 * 8);
 #ifdef __TFA_ENABLE_DRY_TEST
-			Serial.printf("_handler_internal: checksums for repeat: %d -->  %02x vs %02x --> %d\r\n", i, checksumFromMessage, cchecksumComputed, checksumFromMessage == cchecksumComputed ? 1 : 0);
+			// Serial.printf("%d \t", _binToDecRev(_buff, i * 6 * 8 + 13, i * 6 * 8 + 23));
+			Serial.printf("_handler_internal: checksums for repeat: %d at idx %3d -->  m: %02x vs c: %02x --> %d\r\n", i, checksumIndex, checksumFromMessage, checksumComputed, checksumFromMessage == checksumComputed ? 1 : 0);
 #endif
-			if (checksumFromMessage == cchecksumComputed)
+			if (checksumFromMessage == checksumComputed)
 			{
 				this->_values.channel = _binToDecRev(_buff, i * 6 * 8 + 2, i * 6 * 8 + 3) + 1;
 				this->_values.id = _binToDecRev(_buff, i * 6 * 8 + 4, i * 6 * 8 + 11);
@@ -222,8 +224,10 @@ uint8_t TFA433::_checksum(byte *binary, int offset)
 			uint8_t mix = (crc ^ inbyte) & 0x80; // changed from & 0x01
 			crc <<= 1;							 // changed from right shift
 			if (mix)
+			{
 				crc ^= 0x31; // changed from 0x8C;
-			inbyte <<= 1;	 // changed from right shift
+			}
+			inbyte <<= 1; // changed from right shift
 		}
 	}
 
