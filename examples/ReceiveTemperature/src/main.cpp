@@ -1,7 +1,12 @@
 #include "Arduino.h"
 #include <tfa433.h>
 
-#define PIN_RFINPUT GPIO_NUM_23
+#ifdef ESP32
+#define PIN_RFINPUT GPIO_NUM_2
+#else
+// beware thate the pin must be capable of hardware interrupts!
+#define PIN_RFINPUT 2
+#endif
 
 TFA433 tfa = TFA433();
 
