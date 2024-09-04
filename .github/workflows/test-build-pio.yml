@@ -42,6 +42,6 @@ jobs:
       with:
         name: build
         path: |
-          ./examples/ReceiveTemperature/pio/build/*/bootloader.bin
-          ./examples/ReceiveTemperature/pio/build/*/firmware.bin
-          ./examples/ReceiveTemperature/pio/build/*/partitions.bin
+          ./examples/ReceiveTemperature/.pio/build/*/bootloader.bin
+          ./examples/ReceiveTemperature/.pio/build/*/firmware.bin
+          ./examples/ReceiveTemperature/.pio/build/*/partitions.bin
