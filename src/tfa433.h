@@ -22,6 +22,8 @@ compatible base station 30.3055.01 https://www.tfa-dostmann.de/produkt/funk-ther
 #define ARDUINO_ISR_ATTR 
 #endif
 
+// in case you do not have a device handy and still need to play around
+// uncomment the next line to get some stuff going while offline
 // #define __TFA_ENABLE_DRY_TEST 1
 
 // actual ~515
@@ -30,7 +32,7 @@ compatible base station 30.3055.01 https://www.tfa-dostmann.de/produkt/funk-ther
 #define SYNCPULSELENMAX 600
 #define MAXPULSELEN 3000
 #define _PAK_SIZE 40
-#define _BUFF_SIZE _PAK_SIZE + 5
+#define _BUFF_SIZE _PAK_SIZE / 8
 
 typedef struct tfaResult
 {
@@ -59,17 +61,13 @@ private:
 
 	uint8_t _lastPinValue;
 	unsigned long _lastPulseLen, _lastLowUsec, _lastUsec;
-
 	unsigned long _lastPackageArrived;
-	uint8_t _lastBuff[_BUFF_SIZE];
 	uint8_t _pin;
 
 	void _init();
 	void ARDUINO_ISR_ATTR _handler();
 	bool ARDUINO_ISR_ATTR _handler_internal(unsigned long uSec, uint8_t pinValue);
-	int _binToDecRev(uint8_t *binary, int s, int e);
-	int _binToDec(uint8_t *binary, int s, int e);
-	uint8_t _checksum(uint8_t *binary, int offset);
+	uint8_t _checksum(uint8_t *addr, uint8_t len);
 	tfaResult _values;
 };
 

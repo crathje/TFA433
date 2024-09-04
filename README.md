@@ -30,6 +30,12 @@ The protocol of the TFA 30.3212.02 differs from the original one used in this fo
 See this capture while transmitting 27.2°C as reference:
 ![LA Captured TFA 30.3212.02 transmitting 27.2°C](raw-data/TFA-30.3212.02-sample-data-captured-27.2-degree-celcius.png?raw=true)
 
+Checksum seems to be
+```
+reveng -w8 -sF 42105affe6 421845ff43 42125aff6a 421000ffef 4210b4fffd 4210cbff5f 4211ceff6e
+width=8  poly=0x31  init=0x00  refin=false  refout=false  xorout=0x00  check=0xa2  residue=0x00  name=(none)
+```
+
 
 ### Inspiration
 
