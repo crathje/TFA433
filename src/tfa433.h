@@ -19,7 +19,7 @@ compatible base station 30.3055.01 https://www.tfa-dostmann.de/produkt/funk-ther
 // we do not like static interrupt handlers, ESP32 allows us to use function interrupts
 #include <FunctionalInterrupt.h>
 #else
-#define ARDUINO_ISR_ATTR 
+#define ARDUINO_ISR_ATTR
 #endif
 
 // in case you do not have a device handy and still need to play around
@@ -39,6 +39,7 @@ typedef struct tfaResult
 	uint8_t id;
 	uint8_t channel;
 	int16_t temperature;
+	unsigned long packageMS;
 } tfaResult;
 
 class TFA433
@@ -48,7 +49,7 @@ public:
 	void start(int pin);
 	void stop();
 	bool isDataAvailable();
-	void getData(uint8_t &id, uint8_t &channel, int16_t &temperature);
+	void getData(uint8_t &id, uint8_t &channel, int16_t &temperature, unsigned long &packageMS);
 	tfaResult getData();
 #ifdef __TFA_ENABLE_DRY_TEST
 	void _play_dry();
@@ -61,7 +62,6 @@ private:
 
 	uint8_t _lastPinValue;
 	unsigned long _lastPulseLen, _lastLowUsec, _lastUsec;
-	unsigned long _lastPackageArrived;
 	uint8_t _pin;
 
 	void _init();

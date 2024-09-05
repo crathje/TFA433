@@ -4,7 +4,6 @@ volatile bool _avail = false;
 volatile uint8_t _buff[_BUFF_SIZE];
 volatile uint8_t _buffEnd = 0;
 
-unsigned long _lastPackageArrived;
 uint8_t _pin = 0;
 
 #ifdef __TFA_ENABLE_DRY_TEST
@@ -31,7 +30,8 @@ const PROGMEM uint32_t testData[] = {
 TFA433::TFA433()
 {
 	_lastPinValue = 0xFF;
-	_lastPackageArrived = 0;
+	_values.packageMS = 0;
+	_values.temperature = 0xFFFF; // something invalid/unreasonable
 }
 
 void TFA433::start(int pin)
@@ -147,11 +147,13 @@ inline bool TFA433::_handler_internal(unsigned long uSec, uint8_t pinValue)
 				this->_values.id = id;
 				this->_values.temperature = temperature;
 				_avail = true; // notify
-
 #ifdef __TFA_ENABLE_DRY_TEST
 				Serial.printf("_handler_internal: data is new -> set _avail to true\r\n");
 #endif
 			}
+
+			// flag the most recent time the package has been received even with same content
+			this->_values.packageMS = millis();
 
 			return true;
 		}
@@ -166,18 +168,19 @@ inline bool TFA433::_handler_internal(unsigned long uSec, uint8_t pinValue)
 	return false;
 }
 
-void TFA433::getData(uint8_t &id, uint8_t &channel, int16_t &temperature)
+void TFA433::getData(uint8_t &id, uint8_t &channel, int16_t &temperature, unsigned long &packageMS)
 {
 	id = this->_values.id;
 	channel = this->_values.channel;
 	temperature = this->_values.temperature;
+	packageMS = this->_values.packageMS;
 	_avail = false;
 }
 
 tfaResult TFA433::getData()
 {
 	tfaResult result;
-	getData(result.id, result.channel, result.temperature);
+	getData(result.id, result.channel, result.temperature, result.packageMS);
 	return result;
 }
 

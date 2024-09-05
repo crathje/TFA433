@@ -31,6 +31,6 @@ void loop()
   if (tfa.isDataAvailable())
   {
     tfaResult result = tfa.getData();
-    Serial.printf("%9lu:: id: %d, channel: %d, temperature: %d.%d C\n", millis(), result.id, result.channel, result.temperature / 10, result.temperature % 10);
+    Serial.printf("%9lu:: received package at %9lu id: %d, channel: %d, temperature: %d.%d C\n", millis(), result.packageMS, result.id, result.channel, result.temperature / 10, result.temperature % 10);
   }
 }
